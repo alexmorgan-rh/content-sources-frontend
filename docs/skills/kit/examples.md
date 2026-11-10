@@ -125,20 +125,41 @@ When a variant earns a name, use an explicit class or prop — do not hide it in
 `:has` / `:nth-child` stacks. See
 [perspective.md § Base support](perspective.md#base-support-not-exotic-selectors).
 
-**Semantic map (future `LwLabel` primitive):**
+**Primitive template — extend PF, don't replace it (`LwLabel`):**
+
+`LwLabel` ships first as an **empty passthrough harness** (root = PF `Label`,
+`lw-c-label` merged, zero owned props). That is complete and correct on its own — it
+does not need migrated call sites to justify landing. See
+[perspective § Provision, don't gate on headcount](perspective.md#provision-dont-gate-on-headcount).
+
+PF's native semantics **pass straight through** — kit never shadows them:
 
 ```tsx
-// components.config.ts or LwLabel primitive — once
-const severityToLabel = {
-  critical: { color: 'red', … },
-  payAttention: { color: 'orange', … },
-};
-
-// domain / page — many times, zero PF tokens
-<LwLabel severity="payAttention">{text}</LwLabel>
+// PF owns success/warning/danger/info — use PF's own prop, no kit code needed
+<LwLabel status="danger">{text}</LwLabel>
+<LwLabel color="purple" variant="outline">{text}</LwLabel>
 ```
 
-PF v7 renames `color` → callers unchanged; primitive updated once.
+**Extend only what PF lacks** — provision an owned `severity` for domain levels PF's
+`status` enum doesn't cover (CVE `critical`/`important`/`moderate`/`low`), mapped once in
+the harness. This is *provisioning a capability*, driven by "does PF lack it?" — not by a
+consumer headcount:
+
+```tsx
+// LwLabel harness — once. Resolves the owned prop; PF props still pass through.
+const severityToLabel = {
+  critical:  { color: 'red',    icon: <CriticalIcon /> },
+  important: { color: 'orange', icon: <ImportantIcon /> },
+  // moderate / low …
+};
+
+// domain / page — many times, zero PF tokens for the domain vocabulary
+<LwLabel severity="critical">{text}</LwLabel>
+```
+
+Benefits: PF v7 renames `color` → callers unchanged, harness updated once; and the
+domain vocabulary that PF has no word for gets one Lightwell home — **without**
+re-implementing the four statuses PF already owns.
 
 ---
 

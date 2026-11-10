@@ -12,6 +12,15 @@ is the lens. Kit home: `src/kit` (see [tenant-ui-config.yaml](../tenant-ui-confi
 **Code efficiency** = capability **centralized** (one harness, one config, one integration)
 and **configured** at call sites — not reimplemented per page.
 
+**Kit is an extension provisioner — never a replacement of PF defaults.** A `Lw*` unit
+exists to *provision* capability on top of PatternFly: pass through what PF already
+owns, add only what PF lacks. It does **not** re-implement, shadow, or "fix" PF's own
+behavior. So passing a PF prop straight through (`<LwLabel status="danger">`,
+`color`, `variant`) is kit working as designed — not a defect, not "coupling to PF."
+The defect would be *replacing* PF's semantics with a parallel Lightwell copy of the
+same thing. Subtract PF first, then extend. See
+[§ Provision, don't gate on headcount](#provision-dont-gate-on-headcount).
+
 ---
 
 ## Three-tier kit
@@ -77,8 +86,11 @@ host. [List](https://www.patternfly.org/components/list/) and
 primitives — do not substitute a “close enough” sibling.
 
 **New primitive defaults:** Ship with an empty `componentsConfig` entry (PF default
-pattern only). Presentation variants (`isPlain`, `isCompact`, `inline`, …) are call-site
-opts until ≥2 surfaces share a Lightwell baseline that earns a config default.
+pattern only) — and that empty harness is itself complete; it does not owe migrated
+call sites. Presetting a variant **value** (`isPlain`, `isCompact`, `inline`, …) as a
+default waits on a shared Lightwell baseline. That baseline gates a **default value** —
+not the primitive's existence, and not provisioning an owned capability (see
+[§ Provision, don't gate on headcount](#provision-dont-gate-on-headcount)).
 
 **Domain copy hydration:** Product strings and JSX rows live in domain (`.tsx` when
 JSX is required — not `constants.ts`). Pass them into kit as `items` / slot props;
@@ -92,6 +104,57 @@ lightwell.config.ts
     → assemblies/page/page.config.css   ← page-family presentational defaults
       → primitives / assemblies → page / domain
 ```
+
+---
+
+## Provision, don't gate on headcount
+
+**Counting current consumers is not the test for whether a kit unit should exist.**
+The test is a qualitative one: *am I provisioning a reusable capability / a repeatable
+pattern?* If yes, build it in kit now — the count follows, it does not gate.
+
+**Primitives are assumed to be multi-use — that is what "primitive" means.** A base unit
+(`LwLabel`, `LwButton`) earns its place by being the one configured home for a PF host,
+not by proving two call sites on the day it lands. So:
+
+- **Landing a primitive with zero migrated call sites is correct**, not an "unused
+  abstraction." The harness exists so current and future sites have one place to
+  configure; migrating the existing raw-PF usages is a **separate, non-destructive
+  follow-up**, never a precondition. "Migrate N now or defer the primitive" inverts the
+  model — it treats a base unit like a speculative wrapper.
+- **Extending a primitive with Lightwell capability** (a `severity` map, an `intent`
+  prop) is *provisioning*, governed by "is this a real domain capability PF lacks?" —
+  **not** by counting ≥2 consumers first.
+
+**Assemblies follow the same judgment, one level up.** Ask *am I building a repeatable
+pattern?*
+
+- **Yes → it is one assembly.** Build it because it is the pattern, not because two
+  consumers already exist.
+- **No → you are building many individual things that each present differently** — and
+  each of those is its own assembly too. Either branch produces assemblies; the headcount
+  gate never enters.
+
+**Where counting *does* apply:** a **mid-layer wrapper that provisions nothing** — a
+rename or a thin shell around an existing unit with a single consumer and no new
+capability (`LwExportMenu` that just wraps `LwMenu`). Skip it because it adds no
+capability, not because `1 < 2`. The number is a symptom there, not the rule. Likewise,
+defaulting a *presentation variant value* (`isCompact` for everyone) still needs a shared
+Lightwell baseline — but that gates a **default value**, not the unit's existence or its
+capability.
+
+### Compose kit vs *be* an assembly
+
+Two different things wear the words "page section":
+
+| | What it is | Home |
+| - | ---------- | ---- |
+| **A section that composes kit** | Page-owned layout/outline that *arranges* primitives and assemblies (a filter row above a table above a footer) | Page / domain — it is wiring, visible in the return |
+| **A section that IS an assembly** | An extracted, repeatable sectional unit with its own slot contract | `components/assemblies/` — it is kit |
+
+A page laying out `LwDataView` + `LwButtonGroup` is **composition**, not a new assembly.
+It becomes an assembly only when that sectional arrangement is itself the repeatable
+pattern you are provisioning — at which point the judgment above decides, not the count.
 
 ---
 

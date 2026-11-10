@@ -116,8 +116,12 @@ hydrate it, or it has failed. Full treatment:
 7. Is this a **second job** on an existing assembly? (split — anti-God)
 8. **Prop default or presentational?** (TS config vs CSS config)
 9. **New kit unit — defaults?** Start with **PF default pattern only** (empty
-   `componentsConfig` entry). Do not preset variants (`isPlain`, `isCompact`,
-   `inline`, …) until ≥2 call sites share a Lightwell baseline.
+   `componentsConfig` entry). Do not preset a variant **value** (`isPlain`, `isCompact`,
+   `inline`, …) as a default until a shared Lightwell baseline earns it. This gates a
+   **default value**, not the unit's existence or its *capability* — provisioning a
+   capability (an owned prop / semantic map) follows "does PF lack this?", not a
+   headcount. A primitive is assumed multi-use; shipping it with zero migrated call
+   sites is correct. See [perspective § Provision, don't gate on headcount](perspective.md#provision-dont-gate-on-headcount).
 10. Is the **return** still the spec? (no hidden sections)
 11. **Layout intent known?** (justify / align / gap / direction) — **ask** if the
     user did not state it. Do not assume `spaceAround` / `spaceBetween` / `center`.
@@ -262,14 +266,17 @@ Before a new file, wrapper, hook, or DTO:
 3. **Extend** — props, config, defaults. New file = last resort.
 4. **Parent, not wrapper** — `ref` / `className` / `style` on existing host.
 5. **Subtract PF** — app-only fields on types.
-6. **Relevance** — one sentence; ≥2 consumers or delete.
+6. **Relevance** — one sentence: does it *provision a reusable capability / repeatable
+   pattern*? If yes, build it (primitives are assumed multi-use — no consumer headcount).
+   The number only kills a **mid-layer wrapper that provisions nothing** (a thin rename
+   with one consumer).
 
 | Impulse | Move |
 | ------- | ---- |
 | Loading UI | shared status assembly; conditional in return |
 | New table shell | extend kit assembly `LwDataView` |
 | New columns | domain catalog + keyed rows; shell owns `manageColumns` |
-| `color="orange"` in page | `severity` on `LwLabel`; map in primitive harness |
+| Semantic `color="orange"` / `color="red"` in page | **Subtract PF, then extend — don't remap.** PF `Label` already owns `success`/`warning`/`danger`/`info` via its native `status` prop — pass those straight through (`<LwLabel status="danger">`); re-mapping PF's own enum is redundant. **Extend** with an owned `severity` prop **only** for domain levels PF lacks (e.g. CVE `critical`/`important`/`moderate`/`low`, or an icon/color policy `status` won't give): the harness resolves `severity` → PF `color` + `icon`, PF's native `status`/`color` still pass through. That mapping *is* "wire status by default" done right — harness logic, centralized once. But do **not** default a `severity`/`status` **value** in `componentsConfig` — the level is per-instance hydration; the map is centralized, the choice stays at the call site. Provision the `severity` map when you build that domain pattern — **not** gated on counting consumers (primitives are assumed multi-use); the base primitive still ships empty until the extension is actually built. See [perspective § Provision, don't gate on headcount](perspective.md#provision-dont-gate-on-headcount) |
 | Dropdown / MenuToggle tree copied in a page | extract or reuse primitive `LwMenu`; domain keeps handlers |
 | Export / kebab / actions menu with product fetch | `LwMenu` + domain shell — do not kit-ify fetch/PDF |
 | Lightwell props on one PF host (`isBusy`, `items`) | Stay **primitive** — do not promote for kit invention alone |
@@ -499,7 +506,7 @@ Example — one page header, plain or hero surface:
 | Layout assembly with product-shaped props | Children passthrough only (`LwButtonGroup`) |
 | Kit CSS re-scopes `.lightwell-v1-theme` | Already inside plugin wrapper — write bare / `&` rules |
 | Kit assembly that calls `services/*` or chrome PDF | Domain shell — harness has no product fetch |
-| Mid-layer `LwExportMenu` with one consumer | Skip until ≥2 surfaces share export UX |
+| Mid-layer `LwExportMenu` that just wraps `LwMenu` and provisions nothing | Skip — it adds no capability (not because `1 < 2`; the headcount is a symptom). A **primitive or an assembly that provisions real capability** is not subject to this — build it now |
 | Tenant token in `components.config.ts` | Move to `lightwell.config.ts` |
 | Padding / font-size in `components.config.ts` | Move to `components.config.css` or `page.config.css` |
 | Casual PF utility classes (`spacing.*`, `pf-v6-u-*`) | Co-located CSS + tokens; utilities only as last resort |
@@ -514,6 +521,9 @@ Example — one page header, plain or hero surface:
 | PF tokens in pages | Domain name + harness map |
 | Wrong PF sibling for the named component (List → DescriptionList) | Remap host to the documented PF component; keep domain copy in `items` |
 | Kit config presets variants on day one | Empty `componentsConfig` entry; call site passes `isPlain` / etc. when needed |
+| Flagging a new primitive for not migrating existing raw-PF callsites | Non-destructive addition **is** the point — a primitive earns its place by giving future/changed sites one config home; leaving the ~N raw `<PfThing>` usages untouched is correct, not debt and not a finding. Migrating them is a separate, optional follow-up. (This is unlike product-named chrome shells, where you **do** replace usages — a new primitive invents nothing it must dissolve.) |
+| "Primitive has no production consumers — migrate 2 now or defer it" | Primitives are **assumed multi-use**; a base unit does not prove two call sites on landing day. This inverts the model (treats a base unit like a speculative wrapper). Ship the harness; migrate separately. The headcount rule is only for mid-layer wrappers that provision nothing |
+| Treating a page's passthrough of a **native PF prop** (`status`, `color`) as "coupling to PF" that kit must replace | Kit **extends** PF, never **replaces** it. Passing PF's own semantics through is kit working as designed. Only the levels PF **lacks** earn a Lightwell owned prop (`severity`); re-implementing PF's own `status`/`color` behind a parallel prop is the actual anti-pattern |
 | Demo inlines PF chrome | Use same stack as prod |
 | Kit styles in global SCSS / layers early | Co-located `.css` on the `Lw*`; layers later |
 | Flex + custom bg when PF Hero fits | `LwPageHeader hero` + `backgroundSrcLight` / `Dark` |
